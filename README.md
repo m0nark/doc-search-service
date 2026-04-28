@@ -120,7 +120,7 @@ docker-compose logs -f app
 
 ## Project Structure
 
-```
+```text
 src/main/java/com/docsearch/
 ├── controller/
 │   └── DocumentController.java              # REST API endpoints
@@ -163,7 +163,6 @@ src/main/java/com/docsearch/
 └── dto/
     ├── DocumentDto.java                     # API request/response DTOs
     └── DocumentEvent.java                   # Kafka event payload DTOs
-    
 ```
 
 ## Configuration
