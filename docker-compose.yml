@@ -1,0 +1,168 @@
+version: '3.9'
+
+services:
+
+  # ===================== APPLICATION =====================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: doc-search-app
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: docsearch
+      DB_USER: docsearch
+      DB_PASSWORD: docsearch
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
+      KAFKA_BROKERS: kafka:29092
+      JWT_SECRET: dev-secret-change-in-production-256bits-minimum
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - docsearch-net
+
+  # ===================== POSTGRES =====================
+  postgres:
+    image: postgres:16-alpine
+    container_name: doc-search-postgres
+    environment:
+      POSTGRES_DB: docsearch
+      POSTGRES_USER: docsearch
+      POSTGRES_PASSWORD: docsearch
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U docsearch -d docsearch"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - docsearch-net
+
+  # ===================== REDIS =====================
+  redis:
+    image: redis:7-alpine
+    container_name: doc-search-redis
+    command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru --save ""
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - docsearch-net
+
+  # ===================== ELASTICSEARCH =====================
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.1
+    container_name: doc-search-es
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false    # Dev only; enable TLS in prod
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - cluster.name=docsearch-cluster
+    ports:
+      - "9200:9200"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -v '\"status\":\"red\"'"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+    networks:
+      - docsearch-net
+
+  # ===================== KIBANA (optional - dev tooling) =====================
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.12.1
+    container_name: doc-search-kibana
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    profiles:
+      - dev-tools
+    networks:
+      - docsearch-net
+
+  # ===================== ZOOKEEPER + KAFKA =====================
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: doc-search-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - docsearch-net
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: doc-search-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_LOG_RETENTION_HOURS: 168
+    networks:
+      - docsearch-net
+
+  # Kafka UI for dev visibility
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: doc-search-kafka-ui
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+    depends_on:
+      - kafka
+    profiles:
+      - dev-tools
+    networks:
+      - docsearch-net
+
+volumes:
+  postgres-data:
+  es-data:
+
+networks:
+  docsearch-net:
+    driver: bridge
