@@ -67,6 +67,12 @@ docker compose up --build
 
 docker compose --profile dev-tools up --build
 
+# Run sample API requests
+chmod +x sample-requests.sh && ./sample-requests.sh
+
+# View logs
+docker-compose logs -f app
+
 ## API Reference
 
 | Method | Endpoint | Description |
