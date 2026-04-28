@@ -123,38 +123,47 @@ docker-compose logs -f app
 ```
 src/main/java/com/docsearch/
 ├── controller/
-│   └── DocumentController.java     # REST endpoints
+│   └── DocumentController.java              # REST API endpoints
+│
 ├── service/
-│   ├── DocumentService.java         # Core business logic
-│   ├── ElasticsearchService.java    # ES query building
-│   ├── CacheService.java            # Redis cache abstraction
-│   └── DocumentIndexingConsumer.java # Kafka consumer
+│   ├── DocumentService.java                 # Core business logic
+│   ├── ElasticsearchService.java            # Elasticsearch indexing/search
+│   ├── CacheService.java                    # Redis caching abstraction
+│   └── DocumentIndexingConsumer.java        # Kafka async indexing consumer
+│
 ├── model/
-│   ├── Document.java               # JPA entity
-│   ├── DocumentIndex.java          # ES document model
-│   └── TenantRateLimit.java        # Tenant config entity
+│   ├── Document.java                        # PostgreSQL JPA entity
+│   ├── DocumentIndex.java                   # Elasticsearch document model
+│   └── TenantRateLimit.java                 # Tenant rate limit configuration
+│
 ├── repository/
-│   ├── DocumentRepository.java
-│   ├── DocumentSearchRepository.java
-│   └── TenantRateLimitRepository.java
+│   ├── DocumentRepository.java              # JPA repository
+│   ├── DocumentSearchRepository.java        # Elasticsearch repository
+│   └── TenantRateLimitRepository.java       # Tenant config repository
+│
 ├── filter/
-│   ├── TenantContextFilter.java    # Tenant extraction + rate limiting
-│   └── TenantContext.java          # ThreadLocal tenant store
+│   ├── TenantContextFilter.java             # Tenant extraction + request scoping
+│   └── TenantContext.java                   # ThreadLocal tenant storage
+│
 ├── config/
-│   ├── SecurityConfig.java
-│   ├── JwtAuthenticationFilter.java
-│   ├── RedisConfig.java
-│   ├── KafkaConfig.java
-│   └── ElasticsearchConfig.java 
+│   ├── SecurityConfig.java                  # Spring Security configuration
+│   ├── JwtAuthenticationFilter.java         # JWT authentication filter
+│   ├── RedisConfig.java                     # Redis configuration
+│   ├── KafkaConfig.java                     # Kafka producer/consumer config
+│   └── ElasticsearchConfig.java             # Elasticsearch client config
+│
 ├── exception/
-│   ├── GlobalExceptionHandler.java
-│   ├── DocumentNotFoundException.java
-│   └── TenantQuotaExceededException.java
+│   ├── GlobalExceptionHandler.java          # Centralized exception handling
+│   ├── DocumentNotFoundException.java       # Document not found exception
+│   └── TenantQuotaExceededException.java    # Tenant rate limit exception
+│
 ├── health/
-│   └── DocumentSearchHealthIndicator.java
+│   └── DocumentSearchHealthIndicator.java   # Custom health checks
+│
 └── dto/
-    ├── DocumentDto.java             # Request/response DTOs
-    └── DocumentEvent.java           # Kafka event DTOs
+    ├── DocumentDto.java                     # API request/response DTOs
+    └── DocumentEvent.java                   # Kafka event payload DTOs
+    
 ```
 
 ## Configuration
