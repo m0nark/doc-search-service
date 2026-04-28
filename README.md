@@ -120,7 +120,6 @@ docker-compose logs -f app
 
 ## Project Structure
 
-```text
 src/main/java/com/docsearch/
 ├── controller/
 │   └── DocumentController.java              # REST API endpoints
