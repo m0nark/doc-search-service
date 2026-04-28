@@ -44,21 +44,28 @@ Client
 - **Observability**: MDC logging (tenantId + requestId), Micrometer metrics, Prometheus endpoint, percentile histograms
 - **Security**: JWT auth, stateless sessions, security headers, soft-delete (no data loss)
 
-## Quick Start
+# Quick Start
+
+## Prerequisites
+
+Make sure the following are installed:
+
+- Docker Desktop
+- Java 17
+- Maven 3.9+
+- Git
+
+---
+
+## Clone Repository
 
 ```bash
-# Start all services
-docker-compose up -d
+git clone https://github.com/m0nark/doc-search-service
+cd document-search-service
 
-# Start with dev tools (Kibana + Kafka UI)
-docker-compose --profile dev-tools up -d
+docker compose up --build
 
-# Run sample API requests
-chmod +x sample-requests.sh && ./sample-requests.sh
-
-# View logs
-docker-compose logs -f app
-```
+docker compose --profile dev-tools up --build
 
 ## API Reference
 
@@ -131,7 +138,8 @@ src/main/java/com/docsearch/
 │   ├── SecurityConfig.java
 │   ├── JwtAuthenticationFilter.java
 │   ├── RedisConfig.java
-│   └── KafkaConfig.java
+│   ├── KafkaConfig.java
+│   └── ElasticsearchConfig.java 
 ├── exception/
 │   ├── GlobalExceptionHandler.java
 │   ├── DocumentNotFoundException.java
@@ -151,7 +159,7 @@ Key environment variables:
 |----------|---------|-------------|
 | `DB_HOST` | localhost | PostgreSQL host |
 | `REDIS_HOST` | localhost | Redis host |
-| `ES_URIS` | http://localhost:9200 | Elasticsearch URI(s) |
+| `SPRING_ELASTICSEARCH_URIS` | http://localhost:9200 | Elasticsearch URI(s) |
 | `KAFKA_BROKERS` | localhost:9092 | Kafka bootstrap servers |
 | `JWT_SECRET` | (dev secret) | JWT signing secret (min 256 bits) |
 
